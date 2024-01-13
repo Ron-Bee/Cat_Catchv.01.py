@@ -1,0 +1,99 @@
+import pygame
+from pygame.locals import *
+import random
+import sys
+import os
+
+class MainTitle:
+    def __init__(self, text="Cat Catch"):
+        self.surface = pygame.Surface((1080, 720))
+        self.surface.fill((255, 200, 200))
+        font_path = os.path.abspath(r"C:\Users\Ron\Desktop\Python files misc\comic-sans-ms\ComicSansMS3.ttf")
+        font = pygame.font.Font(font_path, int(87.5 * 1.75))
+        text_rendered = font.render(text, True, (0, 128, 128))
+        text_rect = text_rendered.get_rect(center=self.surface.get_rect().center)
+        self.surface.blit(text_rendered, text_rect)
+
+def generate_square_paths(num_paths):
+    base_path = r"C:\Users\Ron\Desktop\Python files misc\Bellas_cat_glossary\finalcat"
+    filenames = ["cat.burger.png", "jcat.png", "monstacat.png", "purrito.png", "robocat.png", "cookie.cat.png", "game.cat.png", "heart.cat.png", "idk.cat.png", "lava.cat.png", "poptart.cat.png", "shroom.cat.png", "star.cat.png", "straw.cat.png", "tongue.cat.png", "candy.cat.png", "snow.cat.png", "bears.cat.png"]
+    return [os.path.abspath(os.path.join(base_path, filename)) for filename in filenames]
+
+def create_squares(num_squares, paths):
+    squares = []
+    for i in range(num_squares):
+        square = pygame.Rect(random.randint(50, 750), random.randint(50, 550), 100, 100) 
+        squares.append({"rect": square, "path": paths[i], "direction": random.choice(['left', 'right', 'up', 'down'])})
+    return squares
+
+def is_in_center_avoid_area(rect, center_area_rect):
+    return not rect.colliderect(center_area_rect)
+
+def is_collision(rect1, rect2):
+    return rect1.colliderect(rect2)
+
+def update_square_positions(squares, center_avoid_area, speed_factor=10.0):
+    for square in squares:
+        square_speed = random.uniform(50.0, 2.0)
+        
+        # Updates position based on direction
+        if square['direction'] == 'left' and square['rect'].left > 0:
+            square['rect'].x -= square_speed
+        elif square['direction'] == 'right' and square['rect'].right < 1080:
+            square['rect'].x += square_speed
+        elif square['direction'] == 'up' and square['rect'].top > 0:
+            square['rect'].y -= square_speed
+        elif square['direction'] == 'down' and square['rect'].bottom < 720:
+            square['rect'].y += square_speed
+        
+        # Checks for collisions with other squares
+        for other_square in squares:
+            if other_square != square and is_collision(square['rect'], other_square['rect']):
+                # Adjusts direction to avoid collision
+                square['direction'] = random.choice(['left', 'right', 'up', 'down'])
+                break  
+
+def draw_squares(screen, squares, color):
+    for square in squares:
+        pygame.draw.rect(screen, color, square['rect'])
+        
+        thumbnail_path = square['path']
+        thumbnail = pygame.image.load(thumbnail_path)
+        thumbnail = pygame.transform.scale(thumbnail, (int(square['rect'].width * 0.8), int(square['rect'].height * 0.8)))
+
+        # Places the thumbnail on the square
+        thumbnail_rect = thumbnail.get_rect(center=square['rect'].center)
+        screen.blit(thumbnail, thumbnail_rect)
+
+pygame.init()
+screen = pygame.display.set_mode((1080, 720))
+clock = pygame.time.Clock()
+
+main_title = MainTitle()
+num_squares = 18  
+paths = generate_square_paths(num_squares)
+squares = create_squares(num_squares, paths)
+color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+# Defines the center avoid area (work in progress)
+center_avoid_area = pygame.Rect(550, 355, 500, 800)
+
+while True:
+    for event in pygame.event.get():
+        if event.type == KEYDOWN:
+            if event.key == K_ESCAPE:
+                pygame.quit()
+                sys.exit()
+        elif event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+
+    update_square_positions(squares, center_avoid_area, speed_factor=50)
+
+    screen.fill((255, 198, 198))
+
+    screen.blit(main_title.surface, (0, 0))
+    draw_squares(screen, squares, color)
+
+    pygame.display.update()
+    clock.tick(60)
